@@ -44,4 +44,4 @@ def index():
     return render_template('index.html', current_text=current_text)
 
 if __name__ == '__main__':
-    app.run(debug=False, port=8118)
+    app.run(debug=False, port=8000)
