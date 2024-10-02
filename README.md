@@ -24,10 +24,8 @@ This is a simple PasteBin-like web application built with Flask. The app allows 
    cd pastebin-app
    ```
 
-2. Create a virtual environment and install dependencies (if running locally):
+2. install dependencies (if running locally):
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate
    pip install -r requirements.txt
    ```
 
