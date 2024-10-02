@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8118
 
 # Command to run the setup_db.py and then start the Flask app
-CMD ["sh", "-c", "python setup_db.py && python app.py"]
+CMD ["python", "app.py"]
