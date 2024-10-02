@@ -32,7 +32,7 @@ def save_text(content):
     conn.close()
 
 # Route for the main page
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/pastebin', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         new_content = request.form['content']
