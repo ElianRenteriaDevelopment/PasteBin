@@ -13,5 +13,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose port 8118 to the outside world
 EXPOSE 8118
 
-# Command to run the setup_db.py and then start the Flask app
-CMD ["python", "app.py"]
+# Command to run the application using Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8118", "app:app"]
