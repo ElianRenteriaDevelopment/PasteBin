@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8118
 
 # Command to run the application using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8118", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]

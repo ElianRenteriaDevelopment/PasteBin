@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  myapp:
+    build: .
+    container_name: pastebin
+    image: pastebin-image
+    restart: always
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - shared-network
+
+networks:
+  shared-network:
+    external: true
