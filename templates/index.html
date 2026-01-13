@@ -60,6 +60,12 @@
             justify-content: center;
             align-items: center;
         }
+        .last-updated {
+            color: #888;
+            font-size: 0.8rem;
+            margin-top: auto;
+            padding: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -74,7 +80,11 @@
         </div>
     </form>
 
+    <p id="lastUpdated" class="last-updated">{% if last_updated %}Last updated: {{ last_updated }}{% endif %}</p>
+
     <script>
+        let currentVersion = {{ current_version }};
+
         function copyText() {
             // Get the text from the textarea
             const textarea = document.getElementById('pasteContent');
@@ -87,6 +97,45 @@
             // Alert the user that the text has been copied
             alert("Text copied to clipboard");
         }
+
+        // Set up Server-Sent Events for real-time updates
+        function setupSSE() {
+            const eventSource = new EventSource('/pastebin/stream');
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                const textarea = document.getElementById('pasteContent');
+
+                // Only update if the version is newer than what we have
+                if (data.version > currentVersion) {
+                    // Update content
+                    textarea.value = data.content;
+                    currentVersion = data.version;
+
+                    // Update last updated timestamp
+                    const lastUpdatedEl = document.getElementById('lastUpdated');
+                    if (data.last_updated) {
+                        lastUpdatedEl.textContent = 'Last updated: ' + data.last_updated;
+                    }
+
+                    // Show a subtle indicator that content was updated
+                    textarea.style.backgroundColor = '#e8f5e9';
+                    setTimeout(() => {
+                        textarea.style.backgroundColor = '';
+                    }, 500);
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                console.error('SSE connection error:', error);
+                eventSource.close();
+                // Reconnect after 3 seconds
+                setTimeout(setupSSE, 3000);
+            };
+        }
+
+        // Start SSE connection when page loads
+        document.addEventListener('DOMContentLoaded', setupSSE);
     </script>
 </body>
 </html>
