@@ -1,3 +1,6 @@
+from gevent import monkey
+monkey.patch_all()
+
 from flask import Flask, request, render_template, redirect, url_for, Response, jsonify
 import sqlite3
 import time
