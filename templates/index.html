@@ -67,6 +67,7 @@
             padding: 1rem;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </head>
 <body>
     <h1>PasteBin 🗑️</h1>
@@ -84,6 +85,21 @@
 
     <script>
         let currentVersion = {{ current_version }};
+
+        function fireConfetti() {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ff0000', '#ff69b4', '#ff1493', '#dc143c', '#c71585']
+            });
+        }
+
+        function checkForHeart(content) {
+            if (content.includes('❤️') || content.includes('❤')) {
+                fireConfetti();
+            }
+        }
 
         function copyText() {
             // Get the text from the textarea
@@ -108,7 +124,6 @@
 
                 // Only update if the version is newer than what we have
                 if (data.version > currentVersion) {
-                    // Update content
                     textarea.value = data.content;
                     currentVersion = data.version;
 
@@ -118,11 +133,8 @@
                         lastUpdatedEl.textContent = 'Last updated: ' + data.last_updated;
                     }
 
-                    // Show a subtle indicator that content was updated
-                    textarea.style.backgroundColor = '#e8f5e9';
-                    setTimeout(() => {
-                        textarea.style.backgroundColor = '';
-                    }, 500);
+                    // Check for heart emoji and fire confetti
+                    checkForHeart(data.content);
                 }
             };
 
