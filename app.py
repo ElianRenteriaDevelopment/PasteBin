@@ -6,6 +6,39 @@ from datetime import datetime, timezone, timedelta
 
 app = Flask(__name__)
 
+# Initialize/migrate database on startup
+def init_db():
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    # Create table if not exists
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS paste (
+            id INTEGER PRIMARY KEY,
+            content TEXT NOT NULL,
+            version INTEGER DEFAULT 1,
+            last_updated TEXT
+        )
+    ''')
+
+    # Add version column if it doesn't exist
+    try:
+        cursor.execute('ALTER TABLE paste ADD COLUMN version INTEGER DEFAULT 1')
+    except sqlite3.OperationalError:
+        pass
+
+    # Add last_updated column if it doesn't exist
+    try:
+        cursor.execute('ALTER TABLE paste ADD COLUMN last_updated TEXT')
+    except sqlite3.OperationalError:
+        pass
+
+    conn.commit()
+    conn.close()
+
+# Run migration on startup
+init_db()
+
 # Database helper function to get the current text and version
 def get_current_text():
     conn = sqlite3.connect('database.db')
