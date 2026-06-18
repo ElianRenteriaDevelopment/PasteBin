@@ -6,3 +6,8 @@ __pycache__/
 .idea/
 .vscode/
 .claude
+
+# Runtime SQLite database (created on startup by init_db)
+database.db
+database.db-wal
+database.db-shm

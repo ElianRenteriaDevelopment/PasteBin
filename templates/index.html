@@ -66,6 +66,20 @@
             margin-top: auto;
             padding: 1rem;
         }
+        .update-banner {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0.5rem 0;
+            padding: 0.5rem 1rem;
+            background: #fff3cd;
+            border: 1px solid #ffe69c;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .update-banner button {
+            margin: 0;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </head>
@@ -81,10 +95,17 @@
         </div>
     </form>
 
+    <div id="updateBanner" class="update-banner">
+        <span>A newer version was saved by someone else.</span>
+        <button type="button" onclick="loadPending()">Load it (discards your edits)</button>
+    </div>
+
     <p id="lastUpdated" class="last-updated">{% if last_updated %}Last updated: {{ last_updated }}{% endif %}</p>
 
     <script>
         let currentVersion = {{ current_version }};
+        let isDirty = false;        // user has unsaved local edits
+        let pendingUpdate = null;   // remote update deferred because of unsaved edits
 
         function fireConfetti() {
             const colors = ['#ff0000', '#ff69b4', '#ff1493', '#dc143c', '#c71585'];
@@ -122,17 +143,44 @@
             }
         }
 
-        function copyText() {
-            // Get the text from the textarea
+        async function copyText() {
             const textarea = document.getElementById('pasteContent');
-            textarea.select();
-            textarea.setSelectionRange(0, 99999); // For mobile devices
 
-            // Copy the text inside the textarea
-            document.execCommand('copy');
+            // Prefer the modern async Clipboard API; fall back to execCommand.
+            try {
+                await navigator.clipboard.writeText(textarea.value);
+            } catch (err) {
+                textarea.select();
+                textarea.setSelectionRange(0, 99999); // For mobile devices
+                document.execCommand('copy');
+            }
 
-            // Alert the user that the text has been copied
             alert("Text copied to clipboard");
+        }
+
+        // Apply a remote update to the textarea and fire any side effects.
+        function applyUpdate(data) {
+            const textarea = document.getElementById('pasteContent');
+            textarea.value = data.content;
+            currentVersion = data.version;
+            isDirty = false;
+            document.getElementById('updateBanner').style.display = 'none';
+            pendingUpdate = null;
+
+            const lastUpdatedEl = document.getElementById('lastUpdated');
+            if (data.last_updated) {
+                lastUpdatedEl.textContent = 'Last updated: ' + data.last_updated;
+            }
+
+            checkForHeart(data.content);
+        }
+
+        // Called from the conflict banner: discard local edits and load the
+        // newer remote version.
+        function loadPending() {
+            if (pendingUpdate) {
+                applyUpdate(pendingUpdate);
+            }
         }
 
         // Set up Server-Sent Events for real-time updates
@@ -141,22 +189,21 @@
 
             eventSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);
-                const textarea = document.getElementById('pasteContent');
 
-                // Only update if the version is newer than what we have
-                if (data.version > currentVersion) {
-                    textarea.value = data.content;
-                    currentVersion = data.version;
-
-                    // Update last updated timestamp
-                    const lastUpdatedEl = document.getElementById('lastUpdated');
-                    if (data.last_updated) {
-                        lastUpdatedEl.textContent = 'Last updated: ' + data.last_updated;
-                    }
-
-                    // Check for heart emoji and fire confetti
-                    checkForHeart(data.content);
+                // Ignore stale or already-applied versions.
+                if (data.version <= currentVersion) {
+                    return;
                 }
+
+                // If the user has unsaved edits, don't clobber them — defer the
+                // update and offer to load it via the banner instead.
+                if (isDirty) {
+                    pendingUpdate = data;
+                    document.getElementById('updateBanner').style.display = 'flex';
+                    return;
+                }
+
+                applyUpdate(data);
             };
 
             eventSource.onerror = function(error) {
@@ -167,8 +214,13 @@
             };
         }
 
-        // Start SSE connection when page loads
-        document.addEventListener('DOMContentLoaded', setupSSE);
+        // Track unsaved local edits so remote updates don't overwrite them.
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pasteContent').addEventListener('input', function() {
+                isDirty = true;
+            });
+            setupSSE();
+        });
     </script>
 </body>
 </html>
